@@ -24,7 +24,10 @@ function New-AppUser($email, $phone, $first, $last, $password) {
 function Call-Function($name, $token, $body) {
   $h = @{ Authorization = "Bearer $token"; apikey = $AnonKey; "Content-Type" = "application/json" }
   try { return Invoke-RestMethod "$BaseUrl/functions/v1/$name" -Method POST -Headers $h -Body ($body | ConvertTo-Json -Depth 5) }
-  catch { return $_.ErrorDetails.Message | ConvertFrom-Json }
+  catch {
+    $raw = $_.ErrorDetails.Message
+    try { return $raw | ConvertFrom-Json } catch { return @{ error = "HTTP $($_.Exception.Response.StatusCode.value__) : $raw" } }
+  }
 }
 
 $hostToken  = New-AppUser "host@test.local"  "+33600000001" "Hugo"  "Host"  "Test1234!"

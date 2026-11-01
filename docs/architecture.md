@@ -41,7 +41,7 @@ supabase db reset              # applique les migrations
 supabase functions serve       # dans un autre terminal dédié
 ```
 
-Secrets requis : `QR_SIGNING_SECRET` (long, aléatoire) dans `supabase/.env` (copier depuis `supabase/.env.example`, gitigné).
+Secrets requis : `QR_SIGNING_SECRET` (long, aléatoire) dans un fichier `.env` **à la racine du projet** (copier depuis `supabase/.env.example`, gitigné). `supabase functions serve` le lit depuis la racine — ou bien lancer : `supabase functions serve --env-file supabase/.env`.
 
 Clés locales (`supabase status`) : **Publishable** `sb_publishable_...` = anon key (celle des apps), **Secret** `sb_secret_...` = service role key (scripts/tests locaux uniquement, jamais dans l'app).
 
