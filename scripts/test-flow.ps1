@@ -90,6 +90,13 @@ Check "forged QR is rejected" ($s4.valid -eq $false) $s4
 $s5 = Call-Function "validate-scan" $guestToken @{ qr = $incQr }
 Check "scan by a non-scanner is denied (403)" ($s5.error)
 
+# 9b. Host designates the Guest as scanner, then the Guest can scan
+$addScanner = Call-Function "add-scanner" $hostToken @{ event_id = $eventId; scanner_phone = "+33600000002" }
+Check "add-scanner returns 201 payload" ($addScanner.event_id -eq $eventId) $addScanner
+$guestScan = Call-Function "validate-scan" $guestToken @{ qr = $incQr }
+# incruste already scanned by host in step 6 -> expect already_scanned, which proves authorization passed
+Check "designated scanner is authorized to scan (not 403)" ($guestScan.reason -ne $null -and $guestScan.error -eq $null) $guestScan
+
 # 10. Event with max_incrustes_per_guest = 0 -> incruste forbidden
 $closedEvent = Call-Function "create-event" $hostToken @{ name = "Closed party"; event_date = $eventDate; location = "Paris"; max_incrustes_per_guest = 0 }
 Check "create-event accepts max_incrustes_per_guest = 0" ($closedEvent.event.id)
