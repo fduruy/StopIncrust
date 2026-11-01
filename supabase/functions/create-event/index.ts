@@ -1,7 +1,7 @@
 import { corsHeaders, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { requireUser, serviceClient } from "../_shared/supabase.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const auth = await requireUser(req);
   if (auth instanceof Response) return auth;
