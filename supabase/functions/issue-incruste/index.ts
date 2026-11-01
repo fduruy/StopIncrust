@@ -26,18 +26,21 @@ serve(async (req: Request) => {
   if (invitation.status !== "active") return errorResponse("invitation is not active", 409);
 
   const event = invitation.events;
-  if (event.max_incrustes_per_guest <= 0) {
+  const maxIncrustes = event.max_incrustes_per_guest as number | null;
+  if (maxIncrustes === 0) {
     return errorResponse("the host did not allow incrustes for this event", 403);
   }
 
-  const { count, error: countError } = await db
-    .from("incruste_tickets")
-    .select("id", { count: "exact", head: true })
-    .eq("parent_invitation_id", invitationId)
-    .neq("status", "revoked");
-  if (countError) return errorResponse(countError.message, 500);
-  if ((count ?? 0) >= event.max_incrustes_per_guest) {
-    return errorResponse(`incruste limit reached (${event.max_incrustes_per_guest})`, 409);
+  if (maxIncrustes !== null) {
+    const { count, error: countError } = await db
+      .from("incruste_tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("parent_invitation_id", invitationId)
+      .neq("status", "revoked");
+    if (countError) return errorResponse(countError.message, 500);
+    if ((count ?? 0) >= maxIncrustes) {
+      return errorResponse(`incruste limit reached (${maxIncrustes})`, 409);
+    }
   }
 
   const ticketId = crypto.randomUUID();

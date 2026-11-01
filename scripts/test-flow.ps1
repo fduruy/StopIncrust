@@ -90,6 +90,31 @@ Check "forged QR is rejected" ($s4.valid -eq $false) $s4
 $s5 = Call-Function "validate-scan" $guestToken @{ qr = $incQr }
 Check "scan by a non-scanner is denied (403)" ($s5.error)
 
+# 10. Event with max_incrustes_per_guest = 0 -> incruste forbidden
+$closedEvent = Call-Function "create-event" $hostToken @{ name = "Closed party"; event_date = $eventDate; location = "Paris"; max_incrustes_per_guest = 0 }
+Check "create-event accepts max_incrustes_per_guest = 0" ($closedEvent.event.id)
+$closedInv = Call-Function "create-invitation" $hostToken @{ event_id = $closedEvent.event.id; guest_phone = "+33600000002" }
+$closedDenied = Call-Function "issue-incruste" $guestToken @{ invitation_id = $closedInv.invitation.id; guest_name = "A"; guest_first_name = "B" }
+Check "incruste forbidden when limit is 0 (403)" ($closedDenied.error -match "did not allow")
+
+# 11. Event with max_incrustes_per_guest = null -> unlimited incruste tickets
+$openEvent = Call-Function "create-event" $hostToken @{ name = "Open party"; event_date = $eventDate; location = "Paris"; max_incrustes_per_guest = $null }
+Check "create-event accepts max_incrustes_per_guest = null (unlimited)" ($openEvent.event.id)
+$openInv = Call-Function "create-invitation" $hostToken @{ event_id = $openEvent.event.id; guest_phone = "+33600000002" }
+$allOpenOk = $true
+foreach ($i in 1..5) {
+  $r = Call-Function "issue-incruste" $guestToken @{ invitation_id = $openInv.invitation.id; guest_name = "Open$i"; guest_first_name = "Guest" }
+  if (-not $r.incruste_ticket.qr_payload) { $allOpenOk = $false; Check "unlimited incruste #$i" $false $r; break }
+}
+if ($allOpenOk) { Check "unlimited incruste: 5 tickets issued without limit" $true }
+
+# 12. Event with limit 1 -> second incruste rejected with 409
+$oneEvent = Call-Function "create-event" $hostToken @{ name = "One-plus party"; event_date = $eventDate; location = "Paris"; max_incrustes_per_guest = 1 }
+$oneInv = Call-Function "create-invitation" $hostToken @{ event_id = $oneEvent.event.id; guest_phone = "+33600000002" }
+Call-Function "issue-incruste" $guestToken @{ invitation_id = $oneInv.invitation.id; guest_name = "First"; guest_first_name = "One" } | Out-Null
+$secondDenied = Call-Function "issue-incruste" $guestToken @{ invitation_id = $oneInv.invitation.id; guest_name = "Second"; guest_first_name = "One" }
+Check "second incruste beyond limit rejected (409)" ($secondDenied.error -match "limit reached")
+
 Write-Host ""
 $failed = @($results | Where-Object { -not $_.Ok }).Count
 Write-Host "Result: $($results.Count - $failed)/$($results.Count) tests OK"
