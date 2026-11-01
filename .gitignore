@@ -62,3 +62,6 @@ captures/
 coverage/
 .nyc_output/
 TestResults/
+
+# Supabase CLI local runtime temp files
+supabase/.temp/
