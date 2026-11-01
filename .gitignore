@@ -38,12 +38,24 @@ out/
 *.key
 secrets.json
 
-# Mobile
-*.apk
+# iOS
+*.xcarchive
+xcuserdata/
+DerivedData/
 *.ipa
-*.aab
-android/local.properties
+*.dSYM.zip
 ios/Pods/
+
+# Android
+*.apk
+*.aab
+*.ap_
+build/
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
 
 # Tests / coverage
 coverage/

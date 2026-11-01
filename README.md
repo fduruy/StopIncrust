@@ -1,11 +1,11 @@
 # StopIncrust
 
-Web App and smartphone App.
+Application mobile iOS et Android.
 
 ## Repository layout
 
-- `web/` — web application (to be defined: stack TBD)
-- `mobile/` — smartphone application (to be defined: stack TBD)
+- `ios/` — application iOS (Swift / SwiftUI)
+- `android/` — application Android (Kotlin / Jetpack Compose)
 - `docs/` — project documentation
 
 ## Getting started
@@ -14,22 +14,15 @@ Web App and smartphone App.
    ```bash
    gh repo clone fduruy/StopIncrust
    ```
-2. Create a feature branch from `main`:
-   ```bash
-   git checkout -b feat/<topic>
-   ```
-3. Commit and push your changes, then open a pull request for review.
+2. Open the project in VS Code.
+3. Commit and push your changes directly on `main` while the project is bootstrapping.
 
 ## Workflow
 
-- Work on dedicated branches, never directly on `main`.
-- Keep pull requests small and focused; one topic per PR.
-- Track tasks with GitHub issues and link them from PRs (`Closes #<number>`).
+- Bootstrap phase: work directly on `main`.
+- Once the project matures: feature branches + pull requests with review.
+- Track tasks with GitHub issues.
 - Pull with rebase before pushing to avoid merge conflicts:
   ```bash
   git pull --rebase
   ```
-
-## Stack
-
-To be defined — see GitHub issues for the current decisions.
