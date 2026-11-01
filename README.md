@@ -6,7 +6,14 @@ Application mobile iOS et Android.
 
 - `ios/` — application iOS (Swift / SwiftUI)
 - `android/` — application Android (Kotlin / Jetpack Compose)
-- `docs/` — project documentation
+- `supabase/` — backend Supabase : migrations SQL (schéma + RLS) et Edge Functions (API)
+- `docs/` — project documentation (voir `docs/architecture.md`)
+
+## Stack
+
+- Backend : Supabase (Postgres + Auth OTP + Edge Functions Deno), voir `docs/architecture.md`
+- iOS : Swift / SwiftUI — Android : Kotlin / Jetpack Compose
+- QR codes signés HMAC-SHA256, validation 100 % côté serveur
 
 ## Getting started
 

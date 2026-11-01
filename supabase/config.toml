@@ -1,0 +1,16 @@
+[project]
+id = "stopincrust"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+
+[auth]
+enabled = true
+site_url = "http://localhost:54321"
+
+[functions]
+verify_jwt = true
