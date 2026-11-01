@@ -6,9 +6,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 $results = @()
-function Check($name, $condition) {
+function Check($name, $condition, $detail = $null) {
   $script:results += [pscustomobject]@{ Test = $name; Ok = [bool]$condition }
-  if ($condition) { Write-Host "PASS  $name" -ForegroundColor Green } else { Write-Host "FAIL  $name" -ForegroundColor Red }
+  if ($condition) { Write-Host "PASS  $name" -ForegroundColor Green }
+  else {
+    Write-Host "FAIL  $name" -ForegroundColor Red
+    if ($detail) { Write-Host "      -> $($detail | ConvertTo-Json -Compress -Depth 4)" -ForegroundColor Yellow }
+  }
 }
 
 $anonHeaders = @{ apikey = $AnonKey; "Content-Type" = "application/json" }
@@ -52,13 +56,13 @@ $eventId = $event.event.id
 
 # 2. Host invite le Guest (lookup par téléphone)
 $inv = Call-Function "create-invitation" $hostToken @{ event_id = $eventId; guest_phone = "+33600000002" }
-Check "create-invitation renvoie un QR signé" ($inv.invitation.qr_payload -and $inv.invitation.qr_payload.Split(".").Count -eq 2)
+Check "create-invitation renvoie un QR signé" ($inv.invitation.qr_payload -and $inv.invitation.qr_payload.Split(".").Count -eq 2) $inv
 $invQr = $inv.invitation.qr_payload
 $invId = $inv.invitation.id
 
 # 3. Le Guest émet un ticket d'incruste
 $inc = Call-Function "issue-incruste" $guestToken @{ invitation_id = $invId; guest_name = "Dupont"; guest_first_name = "Incruste" }
-Check "issue-incruste renvoie un QR signé" ($inc.incruste_ticket.qr_payload)
+Check "issue-incruste renvoie un QR signé" ($inc.incruste_ticket.qr_payload) $inc
 $incQr = $inc.incruste_ticket.qr_payload
 
 # 4. Un user lambda tente d'émettre une incruste -> refusé
@@ -68,19 +72,19 @@ Check "incruste par un non-invité refusée (403)" ($denied.error)
 
 # 5. Scan de l'invitation par le Host -> valide
 $s1 = Call-Function "validate-scan" $hostToken @{ qr = $invQr }
-Check "scan invitation valide" ($s1.valid -eq $true -and $s1.type -eq "invitation")
+Check "scan invitation valide" ($s1.valid -eq $true -and $s1.type -eq "invitation") $s1
 
 # 6. Scan de l'incruste par le Host -> valide
 $s2 = Call-Function "validate-scan" $hostToken @{ qr = $incQr }
-Check "scan incruste valide" ($s2.valid -eq $true -and $s2.type -eq "incruste")
+Check "scan incruste valide" ($s2.valid -eq $true -and $s2.type -eq "incruste") $s2
 
 # 7. Double scan de l'invitation -> refusé
 $s3 = Call-Function "validate-scan" $hostToken @{ qr = $invQr }
-Check "double scan refusé (already_scanned)" ($s3.valid -eq $false -and $s3.reason -eq "already_scanned")
+Check "double scan refusé (already_scanned)" ($s3.valid -eq $false -and $s3.reason -eq "already_scanned") $s3
 
 # 8. QR forgé -> refusé
 $s4 = Call-Function "validate-scan" $hostToken @{ qr = "eyJ2IjoxfQ.fauxsignature" }
-Check "QR forgé refusé" ($s4.valid -eq $false)
+Check "QR forgé refusé" ($s4.valid -eq $false) $s4
 
 # 9. Le Guest tente de scanner (non désigné scanner) -> 403
 $s5 = Call-Function "validate-scan" $guestToken @{ qr = $incQr }
