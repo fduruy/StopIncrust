@@ -46,18 +46,18 @@ export async function signQrPayload(claims: QrClaims): Promise<string> {
 }
 
 export async function verifyQrPayload(qr: string): Promise<QrClaims | null> {
-  const parts = qr.split(".");
-  if (parts.length !== 2) return null;
-  const [payload, sigB64] = parts;
-  const key = await hmacKey();
-  const valid = await crypto.subtle.verify(
-    "HMAC",
-    key,
-    fromBase64Url(sigB64),
-    encoder.encode(payload),
-  );
-  if (!valid) return null;
   try {
+    const parts = qr.split(".");
+    if (parts.length !== 2) return null;
+    const [payload, sigB64] = parts;
+    const key = await hmacKey();
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      fromBase64Url(sigB64),
+      encoder.encode(payload),
+    );
+    if (!valid) return null;
     const claims = JSON.parse(new TextDecoder().decode(fromBase64Url(payload))) as QrClaims;
     if (claims.v !== 1 || typeof claims.ticketId !== "string" || typeof claims.eventId !== "string") return null;
     if (claims.exp * 1000 < Date.now()) return null;

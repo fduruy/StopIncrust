@@ -60,8 +60,8 @@ serve(async (req: Request) => {
   }
   if (ticket.status === "revoked") return jsonResponse({ valid: false, reason: "revoked" }, 200);
   if (ticket.status === "scanned") return jsonResponse({ valid: false, reason: "already_scanned" }, 200);
-  if (ticket.invitations.status !== "active") {
-    return jsonResponse({ valid: false, reason: "parent_invitation_not_active" }, 200);
+  if (ticket.invitations.status === "revoked") {
+    return jsonResponse({ valid: false, reason: "parent_invitation_revoked" }, 200);
   }
 
   const { error: updError } = await db.from("incruste_tickets").update({ status: "scanned" }).eq("id", ticket.id);

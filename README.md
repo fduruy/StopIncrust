@@ -1,19 +1,20 @@
 # StopIncrust
 
-Application mobile iOS et Android.
+iOS and Android mobile app.
 
 ## Repository layout
 
-- `ios/` — application iOS (Swift / SwiftUI)
-- `android/` — application Android (Kotlin / Jetpack Compose)
-- `supabase/` — backend Supabase : migrations SQL (schéma + RLS) et Edge Functions (API)
-- `docs/` — project documentation (voir `docs/architecture.md`)
+- `ios/` — iOS app (Swift / SwiftUI)
+- `android/` — Android app (Kotlin / Jetpack Compose)
+- `supabase/` — Supabase backend: SQL migrations (schema + RLS) and Edge Functions (API)
+- `docs/` — project documentation (see `docs/architecture.md`)
+- `scripts/` — local end-to-end test scripts
 
 ## Stack
 
-- Backend : Supabase (Postgres + Auth OTP + Edge Functions Deno), voir `docs/architecture.md`
-- iOS : Swift / SwiftUI — Android : Kotlin / Jetpack Compose
-- QR codes signés HMAC-SHA256, validation 100 % côté serveur
+- Backend: Supabase (Postgres + OTP Auth + Deno Edge Functions), see `docs/architecture.md`
+- iOS: Swift / SwiftUI — Android: Kotlin / Jetpack Compose
+- QR codes signed with HMAC-SHA256, 100 % server-side validation
 
 ## Getting started
 
@@ -23,6 +24,17 @@ Application mobile iOS et Android.
    ```
 2. Open the project in VS Code.
 3. Commit and push your changes directly on `main` while the project is bootstrapping.
+
+## Local backend
+
+```bash
+supabase start                    # dedicated terminal (stays open, streaming logs)
+supabase status                   # URLs and keys
+supabase db reset                 # apply migrations
+supabase functions serve --env-file .env   # another dedicated terminal
+```
+
+`.env` at the repo root must contain `QR_SIGNING_SECRET` (copy `supabase/.env.example`). It is gitignored — never commit it.
 
 ## Workflow
 

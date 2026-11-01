@@ -1,52 +1,52 @@
 # StopIncrust — Architecture
 
-## Vue d'ensemble
+## Overview
 
-- **Backend** : Supabase (Postgres + Auth OTP par téléphone + Edge Functions Deno).
-- **Apps** : iOS (Swift/SwiftUI) dans `ios/`, Android (Kotlin/Compose) dans `android/`.
-- **QR codes** : payload signé HMAC-SHA256 (`QR_SIGNING_SECRET`), jamais de données sensibles en clair. Toute validation se fait **côté serveur**.
+- **Backend**: Supabase (Postgres + phone OTP Auth + Deno Edge Functions).
+- **Apps**: iOS (Swift/SwiftUI) in `ios/`, Android (Kotlin/Compose) in `android/`.
+- **QR codes**: HMAC-SHA256 signed payload (`QR_SIGNING_SECRET`), never plaintext sensitive data. All validation happens **server-side**.
 
-## Modèle de données
+## Data model
 
-Voir `supabase/migrations/20251101000000_schema.sql`. Entités : `profiles`, `events`, `event_scanners`, `invitations`, `incruste_tickets`, `scans`.
+See `supabase/migrations/20251101000000_schema.sql`. Entities: `profiles`, `events`, `event_scanners`, `invitations`, `incruste_tickets`, `scans`.
 
-Règle anti « incruste d'incruste » : `incruste_tickets.parent_invitation_id` référence toujours une `invitation`, jamais un autre ticket — un incruste ne peut donc jamais émettre de ticket.
+Anti "incruste of incruste" rule: `incruste_tickets.parent_invitation_id` always references an `invitation`, never another ticket — an incruste can therefore never issue tickets.
 
 ## Endpoints (Edge Functions)
 
-Toutes les fonctions exigent un header `Authorization: Bearer <jwt>` (utilisateur authentifié via OTP).
+All functions require an `Authorization: Bearer <jwt>` header (user authenticated via OTP).
 
-| Fonction | Méthode | Rôle | Corps |
+| Function | Method | Role | Body |
 |---|---|---|---|
-| `create-event` | POST | Host crée un événement | `{name, event_date, location, max_incrustes_per_guest}` |
-| `create-invitation` | POST | Host invite un Guest (user app, lookup par téléphone) | `{event_id, guest_phone}` → renvoie le QR signé |
-| `issue-incruste` | POST | Guest émet un ticket d'incruste (si autorisé, limite respectée) | `{invitation_id, guest_name, guest_first_name}` → QR signé |
-| `validate-scan` | POST | Host ou Guest-scanner désigné valide un QR le jour J | `{qr}` → `{valid, reason?, type, guest}` ; marque le ticket `scanned` |
-| `get-event` | GET `?event_id=` | Host / scanner / invité consulte l'événement, invitations, scans | — |
+| `create-event` | POST | Host creates an event | `{name, event_date, location, max_incrustes_per_guest}` |
+| `create-invitation` | POST | Host invites a Guest (app user, lookup by phone) | `{event_id, guest_phone}` → returns signed QR |
+| `issue-incruste` | POST | Guest issues an incruste ticket (if allowed, within limit) | `{invitation_id, guest_name, guest_first_name}` → signed QR |
+| `validate-scan` | POST | Host or designated Guest-scanner validates a QR on event day | `{qr}` → `{valid, reason?, type, guest}` ; marks ticket `scanned` |
+| `get-event` | GET `?event_id=` | Host / scanner / invitee views event, invitations, scans | — |
 
-## Scénarios de sécurité couverts
+## Security scenarios covered
 
-- QR forgé ou copié → rejeté (signature HMAC invalide / ticket inconnu en base).
-- Incruste « non désiré » → aucun ticket en base, donc aucun QR signé valide.
-- Double scan → `already_scanned` (statut + contrainte unique sur `scans`).
-- Incruste dont l'invitation parente est révoquée → `parent_invitation_not_active`.
-- Seuls Host et scanners désignés (`event_scanners`) peuvent appeler `validate-scan`.
+- Forged or copied QR → rejected (invalid HMAC signature / unknown ticket in DB).
+- "Undesired" incruste → no ticket in DB, so no valid signed QR exists.
+- Double scan → `already_scanned` (status + unique constraint on `scans`).
+- Incruste whose parent invitation is revoked → `parent_invitation_revoked`.
+- Only the Host and designated scanners (`event_scanners`) can call `validate-scan`.
 
-## Déploiement local
+## Local deployment
 
 ```bash
-supabase start                 # dans un terminal dédié (reste ouvert, logs en continu)
-supabase status                # affiche les URLs et clés
-supabase db reset              # applique les migrations
-supabase functions serve       # dans un autre terminal dédié
+supabase start                 # dedicated terminal (stays open, streaming logs)
+supabase status                # URLs and keys
+supabase db reset              # apply migrations
+supabase functions serve --env-file .env   # another dedicated terminal
 ```
 
-Secrets requis : `QR_SIGNING_SECRET` (long, aléatoire) dans un fichier `.env` **à la racine du projet** (copier depuis `supabase/.env.example`, gitigné). `supabase functions serve` le lit depuis la racine — ou bien lancer : `supabase functions serve --env-file supabase/.env`.
+Required secret: `QR_SIGNING_SECRET` (long, random) in a `.env` file **at the repo root** (copy from `supabase/.env.example`, gitignored).
 
-Clés locales (`supabase status`) : **Publishable** `sb_publishable_...` = anon key (celle des apps), **Secret** `sb_secret_...` = service role key (scripts/tests locaux uniquement, jamais dans l'app).
+Local keys (`supabase status`): **Publishable** `sb_publishable_...` = anon key (the one embedded in the apps), **Secret** `sb_secret_...` = service role key (local scripts/tests only, never in the app).
 
-Test end-to-end du flow (event → invitation → incruste → scans valides/invalides) :
+End-to-end flow test (event → invitation → incruste → valid/invalid scans):
 
-```bash
+```powershell
 scripts/test-flow.ps1 -AnonKey <Publishable> -ServiceKey <Secret>
 ```
