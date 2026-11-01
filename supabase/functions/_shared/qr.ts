@@ -15,9 +15,13 @@ function fromBase64Url(s: string): Uint8Array {
 }
 
 async function hmacKey(): Promise<CryptoKey> {
+  const secret = Deno.env.get("QR_SIGNING_SECRET");
+  if (!secret || secret.length < 32) {
+    throw new Error("QR_SIGNING_SECRET is missing or too short (min 32 chars) in the Edge Function environment");
+  }
   return await crypto.subtle.importKey(
     "raw",
-    encoder.encode(Deno.env.get("QR_SIGNING_SECRET")!),
+    encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"],
