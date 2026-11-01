@@ -15,8 +15,18 @@ $anonHeaders = @{ apikey = $AnonKey; "Content-Type" = "application/json" }
 $svcHeaders  = @{ apikey = $ServiceKey; Authorization = "Bearer $ServiceKey"; "Content-Type" = "application/json"; Prefer = "return=representation" }
 
 function New-AppUser($email, $phone, $first, $last, $password) {
-  $u = Invoke-RestMethod "$BaseUrl/auth/v1/admin/users" -Method POST -Headers $svcHeaders -Body (@{ email = $email; password = $password; email_confirm = $true } | ConvertTo-Json)
-  Invoke-RestMethod "$BaseUrl/rest/v1/profiles" -Method POST -Headers $svcHeaders -Body (@{ id = $u.id; phone = $phone; first_name = $first; last_name = $last } | ConvertTo-Json) | Out-Null
+  try {
+    $u = Invoke-RestMethod "$BaseUrl/auth/v1/admin/users" -Method POST -Headers $svcHeaders -Body (@{ email = $email; password = $password; email_confirm = $true } | ConvertTo-Json)
+  } catch {
+    $existing = Invoke-RestMethod "$BaseUrl/auth/v1/admin/users?page=1&per_page=1000" -Headers $svcHeaders
+    $u = ($existing.users | Where-Object { $_.email -eq $email })[0]
+    if (-not $u) { throw "user $email introuvable après erreur de création" }
+  }
+  try {
+    Invoke-RestMethod "$BaseUrl/rest/v1/profiles" -Method POST -Headers $svcHeaders -Body (@{ id = $u.id; phone = $phone; first_name = $first; last_name = $last } | ConvertTo-Json) | Out-Null
+  } catch {
+    if ($_ -notmatch "duplicate") { throw }
+  }
   $t = Invoke-RestMethod "$BaseUrl/auth/v1/token?grant_type=password" -Method POST -Headers $anonHeaders -Body (@{ email = $email; password = $password } | ConvertTo-Json)
   return $t.access_token
 }
