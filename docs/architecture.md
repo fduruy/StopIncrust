@@ -35,9 +35,18 @@ Toutes les fonctions exigent un header `Authorization: Bearer <jwt>` (utilisateu
 ## Déploiement local
 
 ```bash
-supabase start
-supabase db reset            # applique les migrations
-supabase functions serve     # sert les Edge Functions
+supabase start                 # dans un terminal dédié (reste ouvert, logs en continu)
+supabase status                # affiche les URLs et clés
+supabase db reset              # applique les migrations
+supabase functions serve       # dans un autre terminal dédié
 ```
 
-Secrets requis : `QR_SIGNING_SECRET` (long, aléatoire) via `supabase secrets set`.
+Secrets requis : `QR_SIGNING_SECRET` (long, aléatoire) dans `supabase/.env` (copier depuis `supabase/.env.example`, gitigné).
+
+Clés locales (`supabase status`) : **Publishable** `sb_publishable_...` = anon key (celle des apps), **Secret** `sb_secret_...` = service role key (scripts/tests locaux uniquement, jamais dans l'app).
+
+Test end-to-end du flow (event → invitation → incruste → scans valides/invalides) :
+
+```bash
+scripts/test-flow.ps1 -AnonKey <Publishable> -ServiceKey <Secret>
+```
