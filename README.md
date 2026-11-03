@@ -4,17 +4,21 @@ iOS and Android mobile app.
 
 ## Repository layout
 
-- `ios/` — iOS app (Swift / SwiftUI)
-- `android/` — Android app (Kotlin / Jetpack Compose)
+- `app/` — Flutter app (Dart): one codebase for iOS + Android, see `app/README.md`
 - `supabase/` — Supabase backend: SQL migrations (schema + RLS) and Edge Functions (API)
 - `docs/` — project documentation (see `docs/architecture.md`)
-- `scripts/` — local end-to-end test scripts
+- `scripts/` — local end-to-end test scripts (`scripts/test-flow.ps1`)
+- `ios/`, `android/` — legacy native skeletons (Swift / Kotlin), kept for reference; the app lives in `app/`
 
 ## Stack
 
+- App: Flutter (Dart) — iOS + Android from one codebase; the final iOS build requires a Mac (or cloud CI)
 - Backend: Supabase (Postgres + OTP Auth + Deno Edge Functions), see `docs/architecture.md`
-- iOS: Swift / SwiftUI — Android: Kotlin / Jetpack Compose
 - QR codes signed with HMAC-SHA256, 100 % server-side validation
+
+## App setup (Windows)
+
+See `app/README.md`: install Flutter SDK + Android Studio, then `cd app && flutter create . && flutter pub get`, put the local Publishable key in `app/lib/config.dart`, press F5 in VS Code.
 
 ## Getting started
 

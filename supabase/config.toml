@@ -11,3 +11,8 @@ port = 54322
 [auth]
 enabled = true
 site_url = "http://localhost:54321"
+
+# LOCAL DEV ONLY: auto-confirm phone OTP so login works without Twilio.
+# Remove this block before deploying to production.
+[auth.sms]
+autoconfirm = true
