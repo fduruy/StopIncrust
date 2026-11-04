@@ -12,7 +12,15 @@ port = 54322
 enabled = true
 site_url = "http://localhost:54321"
 
-# LOCAL DEV ONLY: auto-confirm phone OTP so login works without Twilio.
-# Remove this block before deploying to production.
+# LOCAL DEV ONLY: auto-confirm phone OTP so login works without real SMS.
+# The twilio block below is a dummy provider — with autoconfirm = true no SMS is actually sent.
+# Remove/replace this whole section with real Twilio credentials before production.
 [auth.sms]
+enable_signup = true
 autoconfirm = true
+template = "Your code is {{ .Code }}"
+
+[auth.sms.twilio]
+account_sid = "AC00000000000000000000000000000000"
+auth_token = "dummy-local-dev-only"
+message_service_sid = "MG00000000000000000000000000000000"
