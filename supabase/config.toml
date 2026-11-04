@@ -21,6 +21,11 @@ autoconfirm = true
 template = "Your code is {{ .Code }}"
 
 [auth.sms.twilio]
+enabled = true
 account_sid = "AC00000000000000000000000000000000"
 auth_token = "dummy-local-dev-only"
 message_service_sid = "MG00000000000000000000000000000000"
+
+# Fixed OTP codes for local testing (no real SMS needed)
+[auth.sms.test_otp]
+"+33600000000" = "123456"
