@@ -8,5 +8,5 @@
 /// NEVER put the Secret (service_role) key here — only the Publishable key.
 class SupabaseConfig {
   static const String url = 'http://10.0.2.2:54321';
-  static const String anonKey = 'sb_publishable_REPLACE_ME';
+  static const String anonKey = 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
 }

@@ -25,8 +25,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Future<void> _load() async {
     try {
-      setState(() => _invitations = await widget.api.invitationsOfEvent(widget.event.id));
+      final list = await widget.api.invitationsOfEvent(widget.event.id);
+      if (!mounted) return;
+      setState(() => _invitations = list);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = e.toString());
     }
   }

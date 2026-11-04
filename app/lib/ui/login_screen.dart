@@ -21,8 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _sendOtp() async {
     setState(() { _busy = true; _error = null; });
     try {
-      final res = await widget.api.sendOtp(_phone.text.trim());
-      if (res.session != null) {
+      await widget.api.sendOtp(_phone.text.trim());
+      if (widget.api.hasSession) {
         // Local dev with sms autoconfirm: session returned immediately.
         await widget.api.ensureProfile(
           phone: _phone.text.trim(),

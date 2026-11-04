@@ -24,7 +24,9 @@ class _GuestInvitationScreenState extends State<GuestInvitationScreen> {
 
   Future<void> _load() async {
     try {
-      setState(() => _tickets = await widget.api.incrusteTicketsOfInvitation(widget.invitation.id));
+      final list = await widget.api.incrusteTicketsOfInvitation(widget.invitation.id);
+      if (!mounted) return;
+      setState(() => _tickets = list);
     } catch (_) {}
   }
 

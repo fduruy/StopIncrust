@@ -11,7 +11,9 @@ class ApiClient {
   // ---------- Auth ----------
 
   /// Sends the SMS OTP. In local dev (sms autoconfirm), a session may come back immediately.
-  Future<AuthResponse> sendOtp(String phone) => _sb.auth.signInWithOtp(phone: phone);
+  Future<void> sendOtp(String phone) => _sb.auth.signInWithOtp(phone: phone);
+
+  bool get hasSession => _sb.auth.currentSession != null;
 
   Future<AuthResponse> verifyOtp(String phone, String code) =>
       _sb.auth.verifyOTP(type: OtpType.sms, phone: phone, token: code);
