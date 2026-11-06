@@ -46,7 +46,7 @@ class ApiClient {
       'location': location,
       'max_incrustes_per_guest': maxIncrustesPerGuest,
     });
-    return Event.fromJson(_data(res)['event'] as Map<String, dynamic>);
+    return Event.fromJson(_data(res)['event']);
   }
 
   Future<Invitation> createInvitation({required String eventId, required String guestPhone}) async {
@@ -54,7 +54,7 @@ class ApiClient {
       'event_id': eventId,
       'guest_phone': guestPhone,
     });
-    return Invitation.fromJson(_data(res)['invitation'] as Map<String, dynamic>);
+    return Invitation.fromJson(_data(res)['invitation']);
   }
 
   Future<void> addScanner({required String eventId, required String scannerPhone}) async {
@@ -74,35 +74,35 @@ class ApiClient {
       'guest_first_name': firstName,
       'guest_name': lastName,
     });
-    return IncrusteTicket.fromJson(_data(res)['incruste_ticket'] as Map<String, dynamic>);
+    return IncrusteTicket.fromJson(_data(res)['incruste_ticket']);
   }
 
   Future<ScanResult> validateScan(String qr) async {
     final res = await _sb.functions.invoke('validate-scan', body: {'qr': qr});
-    return ScanResult.fromJson(_data(res) as Map<String, dynamic>);
+    return ScanResult.fromJson(_data(res));
   }
 
   // ---------- REST reads (RLS-scoped) ----------
 
   Future<List<Event>> myHostedEvents() async {
     final rows = await _sb.from('events').select().eq('host_id', _uid).order('created_at');
-    return rows.map((r) => Event.fromJson(r as Map<String, dynamic>)).toList();
+    return rows.map((r) => Event.fromJson(r)).toList();
   }
 
   Future<List<Invitation>> myInvitations() async {
     final rows = await _sb.from('invitations').select().eq('guest_id', _uid).order('created_at');
-    return rows.map((r) => Invitation.fromJson(r as Map<String, dynamic>)).toList();
+    return rows.map((r) => Invitation.fromJson(r)).toList();
   }
 
   Future<List<Invitation>> invitationsOfEvent(String eventId) async {
     final rows = await _sb.from('invitations').select().eq('event_id', eventId).order('created_at');
-    return rows.map((r) => Invitation.fromJson(r as Map<String, dynamic>)).toList();
+    return rows.map((r) => Invitation.fromJson(r)).toList();
   }
 
   Future<List<IncrusteTicket>> incrusteTicketsOfInvitation(String invitationId) async {
     final rows =
         await _sb.from('incruste_tickets').select().eq('parent_invitation_id', invitationId).order('created_at');
-    return rows.map((r) => IncrusteTicket.fromJson(r as Map<String, dynamic>)).toList();
+    return rows.map((r) => IncrusteTicket.fromJson(r)).toList();
   }
 
   // ---------- helpers ----------

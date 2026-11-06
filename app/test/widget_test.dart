@@ -1,30 +1,23 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Basic smoke tests for StopIncrust models (no Supabase init needed).
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:stopincrust/main.dart';
+import 'package:stopincrust/models.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('Event.fromJson parses max_incrustes_per_guest (0 / N / null)', () {
+    final e0 = Event.fromJson({
+      'id': 'e1', 'name': 'A', 'event_date': '2026-12-24T20:00:00Z', 'location': 'Paris', 'max_incrustes_per_guest': 0,
+    });
+    final eNull = Event.fromJson({
+      'id': 'e2', 'name': 'B', 'event_date': '2026-12-24T20:00:00Z', 'location': 'Paris', 'max_incrustes_per_guest': null,
+    });
+    expect(e0.maxIncrustesPerGuest, 0);
+    expect(eNull.maxIncrustesPerGuest, isNull);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('ScanResult.fromJson handles invalid payload', () {
+    final r = ScanResult.fromJson({'valid': false, 'reason': 'already_scanned'});
+    expect(r.valid, isFalse);
+    expect(r.reason, 'already_scanned');
   });
 }
