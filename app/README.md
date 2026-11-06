@@ -19,6 +19,23 @@ flutter pub get
 
 Then in VS Code: bottom-right corner → pick a device (create an Android emulator in Android Studio: Device Manager → Create Device), then press **F5** (Run).
 
+## Contacts permission (invite from phonebook)
+
+The "From contacts" button needs native permissions — add them once after `flutter create .`:
+
+**Android** — in `app/android/app/src/main/AndroidManifest.xml`, inside `<manifest>`:
+```xml
+<uses-permission android:name="android.permission.READ_CONTACTS" />
+```
+
+**iOS** — in `app/ios/Runner/Info.plist`, inside `<dict>`:
+```xml
+<key>NSContactsUsageDescription</key>
+<string>StopIncrust reads your contacts to invite your guests by phone number.</string>
+```
+
+Only contacts that already have a StopIncrust account (matching phone in `profiles`) can be invited — others are reported in the result dialog.
+
 ## Notes
 
 - `lib/config.dart`: for the Android emulator use `http://10.0.2.2:54321`; for a real phone use your PC's LAN IP (both must be on the same Wi-Fi).

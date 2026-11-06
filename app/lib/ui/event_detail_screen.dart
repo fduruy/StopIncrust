@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../api_client.dart';
 import '../models.dart';
+import 'contacts_picker_screen.dart';
 
 /// Host view of an event: invitations (with QR), add scanner, add guest.
 class EventDetailScreen extends StatefulWidget {
@@ -57,6 +58,35 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
   }
 
+  /// Pick several phone contacts and create one invitation per contact.
+  Future<void> _pickContacts() async {
+    final phones = await Navigator.push<List<String>>(
+      context, MaterialPageRoute(builder: (_) => const ContactsPickerScreen()));
+    if (phones == null || phones.isEmpty) return;
+    int ok = 0;
+    final errors = <String>[];
+    for (final p in phones) {
+      try {
+        await widget.api.createInvitation(eventId: widget.event.id, guestPhone: p);
+        ok++;
+      } catch (e) {
+        errors.add('$p → $e');
+      }
+    }
+    await _load();
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$ok invitation(s) créée(s) sur ${phones.length}'),
+        content: errors.isEmpty
+            ? null
+            : SingleChildScrollView(child: Text(errors.join('\n'), style: const TextStyle(color: Colors.red, fontSize: 12))),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+      ),
+    );
+  }
+
   Future<void> _addScanner() async {
     final phone = TextEditingController();
     final ok = await showDialog<bool>(
@@ -92,6 +122,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           const SizedBox(height: 12),
           Wrap(spacing: 8, children: [
             ElevatedButton.icon(onPressed: _addGuest, icon: const Icon(Icons.person_add), label: const Text('Invite guest')),
+            ElevatedButton.icon(onPressed: _pickContacts, icon: const Icon(Icons.contacts), label: const Text('From contacts')),
             OutlinedButton.icon(onPressed: _addScanner, icon: const Icon(Icons.qr_code_scanner), label: const Text('Add scanner')),
           ]),
           const Divider(height: 32),
