@@ -14,14 +14,13 @@ class ScannerScreen extends StatefulWidget {
 
 class _ScannerScreenState extends State<ScannerScreen> {
   bool _handling = false;
+  final _manualController = TextEditingController();
 
-  Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_handling) return;
-    final qr = capture.barcodes.firstOrNull?.rawValue;
-    if (qr == null || qr.isEmpty) return;
+  Future<void> _validate(String qr) async {
+    if (_handling || qr.trim().isEmpty) return;
     setState(() => _handling = true);
     try {
-      final ScanResult result = await widget.api.validateScan(qr);
+      final ScanResult result = await widget.api.validateScan(qr.trim());
       if (!mounted) return;
       showDialog(
         context: context,
@@ -43,11 +42,32 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
   }
 
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    final qr = capture.barcodes.firstOrNull?.rawValue;
+    if (qr == null) return;
+    await _validate(qr);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Scan invitations')),
-      body: MobileScanner(onDetect: _onDetect),
+      body: Column(children: [
+        Expanded(child: MobileScanner(onDetect: _onDetect)),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(children: [
+            Expanded(
+              child: TextField(
+                controller: _manualController,
+                decoration: const InputDecoration(labelText: '…or paste QR payload', isDense: true),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(onPressed: () => _validate(_manualController.text), child: const Text('Check')),
+          ]),
+        ),
+      ]),
     );
   }
 }
