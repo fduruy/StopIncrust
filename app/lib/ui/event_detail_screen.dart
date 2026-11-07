@@ -58,19 +58,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
   }
 
-  /// Pick several phone contacts and create one invitation per contact.
+  /// Pick several phone contacts and create one invitation per contact (registered users only).
   Future<void> _pickContacts() async {
-    final phones = await Navigator.push<List<String>>(
+    final picked = await Navigator.push<List<PickedContact>>(
       context, MaterialPageRoute(builder: (_) => const ContactsPickerScreen()));
-    if (phones == null || phones.isEmpty) return;
+    if (picked == null || picked.isEmpty) return;
     int ok = 0;
     final errors = <String>[];
-    for (final p in phones) {
+    for (final c in picked) {
       try {
-        await widget.api.createInvitation(eventId: widget.event.id, guestPhone: p);
+        await widget.api.createInvitation(eventId: widget.event.id, guestPhone: c.phone);
         ok++;
       } catch (e) {
-        errors.add('$p → $e');
+        errors.add('${c.displayName} (${c.phone}) → $e');
       }
     }
     await _load();
@@ -78,7 +78,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('$ok invitation(s) créée(s) sur ${phones.length}'),
+        title: Text('$ok invitation(s) créée(s) sur ${picked.length}'),
         content: errors.isEmpty
             ? null
             : SingleChildScrollView(child: Text(errors.join('\n'), style: const TextStyle(color: Colors.red, fontSize: 12))),

@@ -2,7 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
-/// Multi-select contact picker. Returns the normalized (E.164-ish) phone numbers.
+/// One picked contact: display name + normalized phone.
+class PickedContact {
+  final String displayName;
+  final String phone;
+  const PickedContact(this.displayName, this.phone);
+
+  @override
+  bool operator ==(Object other) => other is PickedContact && other.phone == phone;
+
+  @override
+  int get hashCode => phone.hashCode;
+
+  /// Split "Jean Dupont Martin" into first/last name for incruste tickets.
+  Map<String, String> toGuest() {
+    final parts = displayName.trim().split(RegExp(r'\s+'));
+    final first = parts.isNotEmpty ? parts.first : displayName;
+    final last = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    return {'first_name': first, 'last_name': last.isEmpty ? '-' : last};
+  }
+}
+
+/// Multi-select contact picker. Returns the picked contacts (name + normalized E.164-ish phone).
 class ContactsPickerScreen extends StatefulWidget {
   const ContactsPickerScreen({super.key});
 
@@ -22,7 +43,7 @@ class ContactsPickerScreen extends StatefulWidget {
 
 class _ContactsPickerScreenState extends State<ContactsPickerScreen> {
   List<Contact> _contacts = [];
-  final Set<String> _selectedPhones = {};
+  final Set<PickedContact> _selected = {};
   bool _loading = true;
   String? _error;
   String _query = '';
@@ -68,10 +89,10 @@ class _ContactsPickerScreenState extends State<ContactsPickerScreen> {
         title: const Text('Choisir des contacts'),
         actions: [
           TextButton(
-            onPressed: _selectedPhones.isEmpty
+            onPressed: _selected.isEmpty
                 ? null
-                : () => Navigator.pop(context, _selectedPhones.toList()),
-            child: Text('Inviter ${_selectedPhones.length}'),
+                : () => Navigator.pop(context, _selected.toList()),
+            child: Text('Sélectionner ${_selected.length}'),
           ),
         ],
       ),
@@ -93,13 +114,14 @@ class _ContactsPickerScreenState extends State<ContactsPickerScreen> {
                       itemBuilder: (ctx, i) {
                         final c = filtered[i];
                         final phone = ContactsPickerScreen.normalizePhone(c.phones.first.number)!;
-                        final checked = _selectedPhones.contains(phone);
+                        final picked = PickedContact(c.displayName, phone);
+                        final checked = _selected.contains(picked);
                         return CheckboxListTile(
                           value: checked,
                           title: Text(c.displayName),
                           subtitle: Text(phone),
                           onChanged: (v) => setState(() {
-                            if (v == true) { _selectedPhones.add(phone); } else { _selectedPhones.remove(phone); }
+                            if (v == true) { _selected.add(picked); } else { _selected.remove(picked); }
                           }),
                         );
                       },

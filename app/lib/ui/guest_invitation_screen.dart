@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../api_client.dart';
 import '../models.dart';
+import 'contacts_picker_screen.dart';
 
 /// Guest view of one invitation: own QR + incruste tickets (if allowed by Host).
 class GuestInvitationScreen extends StatefulWidget {
@@ -28,6 +29,27 @@ class _GuestInvitationScreenState extends State<GuestInvitationScreen> {
       if (!mounted) return;
       setState(() => _tickets = list);
     } catch (_) {}
+  }
+
+  /// Invite several phone contacts as incruste tickets — only when the Host allows incrustes (max != 0).
+  Future<void> _pickContactsForIncrustes() async {
+    final picked = await Navigator.push<List<PickedContact>>(
+      context, MaterialPageRoute(builder: (_) => const ContactsPickerScreen()));
+    if (picked == null || picked.isEmpty) return;
+    try {
+      final res = await widget.api.issueIncrusteBatch(
+        invitationId: widget.invitation.id,
+        guests: picked.map((c) => c.toGuest()).toList(),
+      );
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${res['created_count']} ticket(s) créé(s), ${res['skipped']} ignoré(s) (limite atteinte)'),
+        ));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   Future<void> _issueIncruste() async {
@@ -75,7 +97,13 @@ class _GuestInvitationScreenState extends State<GuestInvitationScreen> {
           const Divider(height: 32),
           Row(children: [
             const Expanded(child: Text('Incruste tickets', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-            ElevatedButton.icon(onPressed: _issueIncruste, icon: const Icon(Icons.add), label: const Text('Issue')),
+            // Only when the Host allows incrustes (0 = forbidden). null = unlimited.
+            if (widget.invitation.maxIncrustesPerGuest != 0) ...[
+              OutlinedButton.icon(onPressed: _pickContactsForIncrustes, icon: const Icon(Icons.contacts), label: const Text('Contacts')),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(onPressed: _issueIncruste, icon: const Icon(Icons.add), label: const Text('Issue')),
+            ] else
+              const Text('Incrustes désactivés par l’hôte', style: TextStyle(color: Colors.grey)),
           ]),
           ..._tickets.map((t) => Card(
                 child: Padding(

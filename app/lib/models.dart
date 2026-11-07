@@ -27,20 +27,27 @@ class Invitation {
   final String eventId;
   final String status;
   final String? qrPayload;
+  final int? maxIncrustesPerGuest; // from joined events row (null = unlimited)
 
   Invitation({
     required this.id,
     required this.eventId,
     required this.status,
     this.qrPayload,
+    this.maxIncrustesPerGuest,
   });
 
-  factory Invitation.fromJson(Map<String, dynamic> j) => Invitation(
-        id: j['id'] as String,
-        eventId: j['event_id'] as String,
-        status: j['status'] as String,
-        qrPayload: j['qr_payload'] as String?,
-      );
+  factory Invitation.fromJson(Map<String, dynamic> j) {
+    final events = j['events'];
+    final int? max = (events is Map<String, dynamic>) ? events['max_incrustes_per_guest'] as int? : null;
+    return Invitation(
+      id: j['id'] as String,
+      eventId: j['event_id'] as String,
+      status: j['status'] as String,
+      qrPayload: j['qr_payload'] as String?,
+      maxIncrustesPerGuest: max,
+    );
+  }
 }
 
 class IncrusteTicket {

@@ -21,6 +21,8 @@ All functions require an `Authorization: Bearer <jwt>` header (user authenticate
 | `create-event` | POST | Host creates an event | `{name, event_date, location, max_incrustes_per_guest}` |
 | `create-invitation` | POST | Host invites a Guest (app user, lookup by phone) | `{event_id, guest_phone}` → returns signed QR |
 | `issue-incruste` | POST | Guest issues an incruste ticket (if allowed, within limit) | `{invitation_id, guest_name, guest_first_name}` → signed QR |
+| `issue-incruste-batch` | POST | Guest issues several incruste tickets at once (e.g. from phone contacts) | `{invitation_id, guests: [{first_name, last_name}, ...]}` → `{created[], created_count, skipped}` |
+| `add-scanner` | POST | Host designates a Guest as scanner for the event | `{event_id, scanner_phone}` |
 | `validate-scan` | POST | Host or designated Guest-scanner validates a QR on event day | `{qr}` → `{valid, reason?, type, guest}` ; marks ticket `scanned` |
 | `get-event` | GET `?event_id=` | Host / scanner / invitee views event, invitations, scans | — |
 

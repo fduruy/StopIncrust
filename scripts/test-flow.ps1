@@ -122,6 +122,30 @@ Call-Function "issue-incruste" $guestToken @{ invitation_id = $oneInv.invitation
 $secondDenied = Call-Function "issue-incruste" $guestToken @{ invitation_id = $oneInv.invitation.id; guest_name = "Second"; guest_first_name = "One" }
 Check "second incruste beyond limit rejected (409)" ($secondDenied.error -match "limit reached")
 
+# 13. Batch incruste from "contacts" on the unlimited event (null) -> all created
+$batch = Call-Function "issue-incruste-batch" $guestToken @{
+  invitation_id = $openInv.invitation.id
+  guests = @(
+    @{ first_name = "Alice"; last_name = "Martin" },
+    @{ first_name = "Bob"; last_name = "Durand" }
+  )
+}
+Check "issue-incruste-batch creates tickets within quota (unlimited)" ($batch.created_count -eq 2 -and $batch.created[0].qr_payload) $batch
+
+# 14. Batch on closed event (max = 0) -> 403 forbidden
+$batchClosed = Call-Function "issue-incruste-batch" $guestToken @{
+  invitation_id = $closedInv.invitation.id
+  guests = @(@{ first_name = "X"; last_name = "Y" })
+}
+Check "batch incruste forbidden when limit is 0 (403)" ($batchClosed.error -match "did not allow") $batchClosed
+
+# 15. Batch respects remaining quota on limit-1 event (already 1 issued) -> 409
+$batchLimit = Call-Function "issue-incruste-batch" $guestToken @{
+  invitation_id = $oneInv.invitation.id
+  guests = @(@{ first_name = "Z"; last_name = "W" })
+}
+Check "batch incruste blocked when quota exhausted (409)" ($batchLimit.error -match "limit reached") $batchLimit
+
 Write-Host ""
 $failed = @($results | Where-Object { -not $_.Ok }).Count
 Write-Host "Result: $($results.Count - $failed)/$($results.Count) tests OK"

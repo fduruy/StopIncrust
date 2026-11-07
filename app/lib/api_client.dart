@@ -77,6 +77,19 @@ class ApiClient {
     return IncrusteTicket.fromJson(_data(res)['incruste_ticket']);
   }
 
+  /// Batch-create incruste tickets for several guests (e.g. picked from phone contacts).
+  /// Server enforces: invitation active + owned by caller, max_incrustes_per_guest != 0, remaining quota.
+  Future<Map<String, dynamic>> issueIncrusteBatch({
+    required String invitationId,
+    required List<Map<String, String>> guests,
+  }) async {
+    final res = await _sb.functions.invoke('issue-incruste-batch', body: {
+      'invitation_id': invitationId,
+      'guests': guests,
+    });
+    return _data(res);
+  }
+
   Future<ScanResult> validateScan(String qr) async {
     final res = await _sb.functions.invoke('validate-scan', body: {'qr': qr});
     return ScanResult.fromJson(_data(res));
@@ -90,7 +103,11 @@ class ApiClient {
   }
 
   Future<List<Invitation>> myInvitations() async {
-    final rows = await _sb.from('invitations').select().eq('guest_id', _uid).order('created_at');
+    final rows = await _sb
+        .from('invitations')
+        .select('*, events(max_incrustes_per_guest)')
+        .eq('guest_id', _uid)
+        .order('created_at');
     return rows.map((r) => Invitation.fromJson(r)).toList();
   }
 
