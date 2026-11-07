@@ -31,11 +31,37 @@ class _GuestInvitationScreenState extends State<GuestInvitationScreen> {
     } catch (_) {}
   }
 
+  /// Remaining incruste quota for this invitation (null = unlimited).
+  int? get _remainingQuota {
+    final max = widget.invitation.maxIncrustesPerGuest;
+    if (max == null) return null;
+    final used = _tickets.where((t) => t.status != 'revoked').length;
+    return max - used;
+  }
+
   /// Invite several phone contacts as incruste tickets — only when the Host allows incrustes (max != 0).
   Future<void> _pickContactsForIncrustes() async {
     final picked = await Navigator.push<List<PickedContact>>(
       context, MaterialPageRoute(builder: (_) => const ContactsPickerScreen()));
     if (picked == null || picked.isEmpty) return;
+    // Client-side quota check: ask the guest to select fewer contacts instead of failing server-side.
+    final remaining = _remainingQuota;
+    if (remaining != null && picked.length > remaining) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Trop d’incrustes sélectionnés'),
+          content: Text(
+            'L’hôte autorise ${widget.invitation.maxIncrustesPerGuest} incruste(s) max, '
+            'et tu en as déjà ${_tickets.where((t) => t.status != 'revoked').length}. '
+            'Sélectionne au plus $remaining contact(s).',
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+        ),
+      );
+      return;
+    }
     try {
       final res = await widget.api.issueIncrusteBatch(
         invitationId: widget.invitation.id,
@@ -96,7 +122,15 @@ class _GuestInvitationScreenState extends State<GuestInvitationScreen> {
           Text('status: ${inv.status}'),
           const Divider(height: 32),
           Row(children: [
-            const Expanded(child: Text('Incruste tickets', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Incruste tickets', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                widget.invitation.maxIncrustesPerGuest == null
+                    ? 'Illimité'
+                    : 'Reste ${_remainingQuota ?? 0} place(s) sur ${widget.invitation.maxIncrustesPerGuest}',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ])),
             // Only when the Host allows incrustes (0 = forbidden). null = unlimited.
             if (widget.invitation.maxIncrustesPerGuest != 0) ...[
               OutlinedButton.icon(onPressed: _pickContactsForIncrustes, icon: const Icon(Icons.contacts), label: const Text('Contacts')),
