@@ -34,11 +34,18 @@ class _ContactsPickerScreenState extends State<ContactsPickerScreen> {
 
   Future<void> _load() async {
     try {
-      if (!await FlutterContacts.requestPermission()) {
-        if (mounted) setState(() { _error = 'Permission contacts refusée'; _loading = false; });
-        return;
+      // Try reading directly first (permission may already be granted at OS level,
+      // in which case requestPermission() can wrongly report denied).
+      List<Contact> contacts;
+      try {
+        contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: false);
+      } on PlatformException {
+        if (!await FlutterContacts.requestPermission()) {
+          if (mounted) setState(() { _error = 'Permission contacts refusée'; _loading = false; });
+          return;
+        }
+        contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: false);
       }
-      final contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: false);
       final withPhone = contacts
           .where((c) => c.phones.isNotEmpty && ContactsPickerScreen.normalizePhone(c.phones.first.number) != null)
           .toList()
